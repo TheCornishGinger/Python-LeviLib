@@ -3,7 +3,7 @@ from typing import Callable, Union
 from random import randint
 from datetime import datetime
 
-class groups:
+class cache:
     surface: list = []
     rect: list = []
 
@@ -68,48 +68,49 @@ def init(screen_width: int = config.width, screen_height: int = config.height):
 
 
 def update(surface: pygame.Surface):
-    pygame.draw.rect(surface, pygame.Color(0, 0, 0), (0, 0, config.width, config.height))
+    pygame.draw.rect(surface, pygame.Color(0, 0, 0), (0, 0, config.width, config.height)) #black bg
 
-    for r in groups.rect:
+    removal_cache = []
+    for r in cache.rect:
         if r[0] < 0:
             pygame.draw.rect(r[1], pygame.Color(0, 0, 0, 0), r[3])
-            groups.rect.pop(groups.rect.index(r))
+            removal_cache.append(r)
         else:
             pygame.draw.rect(r[1], r[2], r[3])
 
-    i = len(groups.surface)
+    if len(removal_cache) > 0:
+        for r in removal_cache:
+            cache.rect.remove(r)
+
+    i = len(cache.surface)
     while i > 0:
         i = i - 1
-        surface.blit(groups.surface[i][0], (0, 0))
+        surface.blit(cache.surface[i][0], (0, 0))
 
-    print("-=-UPDATE-=-")
-    for i in groups.rect:
-        print("<> ", i[0])
     pygame.display.flip()
-    print("-=-=-=-=-=-")
 
 
 class add:
     def rect(surface: pygame.Surface, color: pygame.Color, rect: pygame.Rect, event: Callable = None):
         found = False
-        for s in groups.surface:
+        for s in cache.surface:
             if s[0] == surface:
                 found = True
         if not found:
             config.error("Surface must be defined first")
             return
-        ID = config.generate_id(groups.rect)
+        ID = config.generate_id(cache.rect)
         if ID < 0:
             return
-        groups.rect.append([ID, surface, color, rect, event])
+        cache.rect.append([ID, surface, color, rect, event])
         return ID
     
 
     def surface(layer: int = None):
         if layer == None:
             layer = 0
-            if len(groups.surface) > 0:
-                for s in groups.surface:
+            if len(cache.surface) > 0:
+                for s in cache.surface:
                     if s[1] > layer:
                         layer = s[1]
                 layer = layer + 1
@@ -120,17 +121,17 @@ class add:
         
         surface = pygame.Surface(pygame.display.get_surface().get_size(), pygame.SRCALPHA)
         surface.fill((0, 0, 0, 0))
-        groups.surface.append([surface, layer])
+        cache.surface.append([surface, layer])
 
         adjust = True
         while adjust:
             adjust = False
             i = 0
-            for s in groups.surface:
+            for s in cache.surface:
                 i = i + 1
-                if len(groups.surface) > i and s[1] < groups.surface[i][1]:
+                if len(cache.surface) > i and s[1] < cache.surface[i][1]:
                     adjust = True
-                    groups.surface.insert(i-1, groups.surface.pop(i))
+                    cache.surface.insert(i-1, cache.surface.pop(i))
 
         return surface
                 
@@ -144,20 +145,20 @@ class remove:
 
 
     def surface(surface: pygame.Surface):
-        for s in groups.surface:
+        for s in cache.surface:
             if s[0] == surface:
-                groups.surface.remove(surface)
-                for r in groups.rect:
+                cache.surface.remove(surface)
+                for r in cache.rect:
                     if r[1] == surface:
-                        groups.rect.remove(r)
+                        cache.rect.remove(r)
                 return True
         return False
 
     def item(ID: int):
         index = 0
-        for r in groups.rect:
+        for r in cache.rect:
             if r[0] == ID:
-                groups.rect[index][0] = -1
+                cache.rect[index][0] = -1
                 return True
             index = index + 1
         return False
@@ -167,8 +168,8 @@ class event:
         x = event.pos[0]
         y = event.pos[1]
 
-        for s in groups.surface:
-            for i in groups.rect:
+        for s in cache.surface:
+            for i in cache.rect:
                 if i[1] == s[0]:
                     pos = i[3]
                     if x >= pos.x and x <= pos.x + pos.w:
@@ -178,7 +179,7 @@ class event:
     def mouse_down_old(event: pygame.event.Event):
         x = event.pos[0]
         y = event.pos[1]
-        for item in groups.rect:
+        for item in cache.rect:
             pos = item[3]
             if item[4] and x >= pos.x and x <= pos.x + pos.w:
                 if y >= pos.y and y <= pos.y + pos.h:
