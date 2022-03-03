@@ -5,8 +5,10 @@ class Log:
     def __init__(self, identity: str, file_name = "log.txt", write_to_file = True, include_date = True, include_time = True, display_warns = True, display_errors = True):
         "Create a new log instance."
         self.__ID__ = identity
-        self.file_name = file_name
-        self.write_to_file = write_to_file
+        if write_to_file:
+            self.file_name = file_name
+        else:
+            self.file_name = None
         self.inc_date = include_date
         self.inc_time = include_time
         self.__disp_warn__ = display_warns
@@ -40,8 +42,8 @@ class Log:
 
     def __write_to_file__(self, msg: str):
         "Write a message to the log file."
-        if not self.write_to_file:
-            return
+        if self.file_name == None:
+            return False
 
         if not os.path.exists(os.getcwd()):
             try: 
@@ -84,11 +86,6 @@ class Log:
         "Log a fatal message."
         msg = self.__build_prefix__("fatal") + msg
         print(msg)
-        return self.__write_to_file__
+        return self.__write_to_file__(msg)
 
 log = Log("logger", write_to_file=False)
-
-log.info("lol bro")
-log.error("lol")
-log.warn("i said lol yo")
-log.fatal("FREAKING LOL")
