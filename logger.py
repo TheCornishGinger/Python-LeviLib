@@ -1,6 +1,9 @@
 import os, lib_check
 from datetime import datetime
-from tkinter import messagebox, Tk
+
+__lib_found__ = lib_check.check_no_gui(False, ["tkinter"])
+if __lib_found__:
+    from tkinter import messagebox, Tk
 
 class Log:
     def __init__(self, identity: str, file_path = "default", write_to_file = True, include_date = True, include_time = True, show_warning = False, show_error = True):
@@ -32,12 +35,13 @@ class Log:
         self.__show_warning__ = show_warning
         self.__show_error__ = show_error
         if show_warning or show_error:
-            r = lib_check.check_no_gui(False, ["tkinter"])
-            if r:
+            if __lib_found__:
                 tk = Tk()
                 tk.withdraw()
             else:
-                self.__err__("Could not import tkinter")
+                self.__show_warning__ = False
+                self.__show_error__ = False
+                self.__err__("Could not import the tkinter module, gui disabled.")
 
 
     def __build_prefix__(self, msg_title: str, overwrite_id = None):
@@ -106,6 +110,8 @@ class Log:
 
     def __err__(self, msg: str):
         "Log an internal error."
+        if self.__show_error__:
+            messagebox.showerror("Internal Error", "INTERNAL ERROR\n\n" + msg)
         return self.__log__(self.__build_prefix__("fatal", "internal") + msg)
     
     def info(self, msg: str):
