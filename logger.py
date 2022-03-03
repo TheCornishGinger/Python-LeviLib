@@ -87,5 +87,3 @@ class Log:
         msg = self.__build_prefix__("fatal") + msg
         print(msg)
         return self.__write_to_file__(msg)
-
-log = Log("logger", write_to_file=False)
