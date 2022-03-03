@@ -1,7 +1,7 @@
 import pygame
 from typing import Callable, Union
 from random import randint
-from logger import Log
+from .logger import Log
 
 log = Log("screen.py")
 

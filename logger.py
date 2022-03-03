@@ -1,5 +1,6 @@
-import os, lib_check
+import os
 from datetime import datetime
+from . import lib_check
 
 __lib_found__ = lib_check.check_no_gui(False, ["tkinter"])
 if __lib_found__:
