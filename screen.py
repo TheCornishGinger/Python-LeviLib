@@ -1,7 +1,9 @@
-import pygame, log
+import pygame
 from typing import Callable, Union
 from random import randint
+from logger import Log
 
+log = Log("screen.py")
 
 class cache:
     surface: list = []
