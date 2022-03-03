@@ -164,7 +164,7 @@ class remove:
         return False
 
 class event:
-    def mouse_down(event):
+    def mouse_over(event):
         x = event.pos[0]
         y = event.pos[1]
 
@@ -184,7 +184,4 @@ class event:
             if item[4] and x >= pos.x and x <= pos.x + pos.w:
                 if y >= pos.y and y <= pos.y + pos.h:
                     item[4]()
-        return # DO THIS
-
-    def mouse_up(event):
         return # DO THIS
