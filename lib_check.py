@@ -1,12 +1,12 @@
 from importlib.util import find_spec
 
-def check_no_gui(force_changes: bool, lib_list: list):
-    return check(lib_list, False, force_changes)
+def check_no_gui(force_change: bool, imports: list):
+    return check(imports, False, force_change)
 
-def check(lib_list: list, enable_gui: bool = True, force_changes: bool = False):    
+def check(lib_list: list, enable_gui = True, force_changes = False):    
     error_list = []
     for lib in lib_list:
-        if not find_spec(lib):
+        if find_spec(lib) == False and len(lib) > 0:
             error_list.append(lib)
 
     if len(error_list) > 0:
