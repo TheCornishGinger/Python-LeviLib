@@ -1,7 +1,7 @@
-import pygame, os
+import pygame, log
 from typing import Callable, Union
 from random import randint
-from datetime import datetime
+
 
 class cache:
     surface: list = []
@@ -12,32 +12,10 @@ class config:
     # DEFAULT VALUES
     width: int = 1280
     height: int = 720
-    log_file: str = "log.txt"
 
 
     def disp_set_mode():
         return pygame.display.set_mode(size=(config.width, config.height), flags=pygame.SRCALPHA)
-
-
-    def error(log: str):
-        time = datetime.now().strftime("%H:%M:%S")
-        log = "[" + time + "] ERROR: " + log
-        print(log)
-        if not os.path.exists(os.getcwd()):
-            try: 
-                open(config.log_file, mode="x").close()
-            except IOError:
-                print("FATAL: file error.")
-                return
-        try:
-            f = open(config.log_file, mode="r", encoding="utf-8")
-            prefix = f.read()
-            f.close()
-            f = open(config.log_file, mode="w", encoding="utf-8")
-            f.write(prefix + "\n" + log)
-            f.close()
-        except IOError:
-            print("FATAL: file error.")
 
 
     def generate_id(list: list):
@@ -52,19 +30,23 @@ class config:
             if not fail:
                 return id
             if attempt > 100:
-                config.error("Too many attempts to generate ID")
+                log.error("Too many attempts to generate ID")
                 return -1
+
+
 
 
 def init(screen_width: int = config.width, screen_height: int = config.height):
     if screen_width < 0 or screen_height < 0:
-        config.error("Screen size cannot be negative")
+        log.error("Screen size cannot be negative")
         return
     if screen_width != config.width:
         config.width = screen_width
     if screen_height != config.height:
         config.height = screen_height
     return config.disp_set_mode()
+
+
 
 
 def update(surface: pygame.Surface):
@@ -90,6 +72,8 @@ def update(surface: pygame.Surface):
     pygame.display.flip()
 
 
+
+
 class add:
     def rect(surface: pygame.Surface, color: pygame.Color, rect: pygame.Rect, event: Callable = None):
         found = False
@@ -97,7 +81,7 @@ class add:
             if s[0] == surface:
                 found = True
         if not found:
-            config.error("Surface must be defined first")
+            log.error("Surface must be defined first")
             return
         ID = config.generate_id(cache.rect)
         if ID < 0:
@@ -114,9 +98,8 @@ class add:
                     if s[1] > layer:
                         layer = s[1]
                 layer = layer + 1
-
         elif layer < 0:
-            config.error("Layer must be greater than -1")
+            log.error("Layer must be greater than -1")
             return
         
         surface = pygame.Surface(pygame.display.get_surface().get_size(), pygame.SRCALPHA)
@@ -136,6 +119,8 @@ class add:
         return surface
                 
 
+
+
 class remove:
     def __new__(self, object: Union[int, pygame.Surface]):
         if type(object) == int:
@@ -154,6 +139,7 @@ class remove:
                 return True
         return False
 
+
     def item(ID: int):
         index = 0
         for r in cache.rect:
@@ -162,6 +148,9 @@ class remove:
                 return True
             index = index + 1
         return False
+
+
+
 
 class event:
     def mouse_over(event):
@@ -175,13 +164,3 @@ class event:
                     if x >= pos.x and x <= pos.x + pos.w:
                         if y >= pos.y and y <= pos.y + pos.h:
                             return i[0]
-
-    def mouse_down_old(event: pygame.event.Event):
-        x = event.pos[0]
-        y = event.pos[1]
-        for item in cache.rect:
-            pos = item[3]
-            if item[4] and x >= pos.x and x <= pos.x + pos.w:
-                if y >= pos.y and y <= pos.y + pos.h:
-                    item[4]()
-        return # DO THIS
