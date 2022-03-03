@@ -1,89 +1,131 @@
 import os, lib_check
 from datetime import datetime
+from tkinter import messagebox, Tk
 
 class Log:
-    def __init__(self, identity: str, file_name = "log.txt", write_to_file = True, include_date = True, include_time = True, display_warns = True, display_errors = True):
-        "Create a new log instance."
-        self.__ID__ = identity
+    def __init__(self, identity: str, file_path = "default", write_to_file = True, include_date = True, include_time = True, show_warning = False, show_error = True):
+        """
+        identity -> Shown when logging to help identify this instance.\n
+        file_path -> Path of the log file (do not include the file name.)\n
+        write_to_file -> Enable/disable writing to the log file.\n
+        include_date -> Enable/disable inclduing the date.\n
+        include_time -> Enable/disable inclduing the time.\n
+        show_warning -> Enable/disable gui warning box. (uses tkinter).\n
+        show_error -> Enable/disable gui error box. (uses tkinter).
+        """
         if write_to_file:
-            self.file_name = file_name
+            if file_path == "default":
+                self.__file_path__ = os.path.join(os.curdir, "log.txt")
+            else:
+                if os.path.exists(self.__file_path__):
+                    self.__file_path__ = file_path
+                else:
+                    self.__file_path__ = None
+                    self.__err__("Can't find given file path, writing to file has been disabled.'")
         else:
-            self.file_name = None
-        self.inc_date = include_date
-        self.inc_time = include_time
-        self.__disp_warn__ = display_warns
-        self.__disp_err__ = display_errors
-        if display_warns or display_errors:
+            self.__file_path__ = None
+
+        self.__cache__ = []
+        self.__ID__ = identity
+        self.__inc_date__ = include_date
+        self.__inc_time__ = include_time
+        self.__show_warning__ = show_warning
+        self.__show_error__ = show_error
+        if show_warning or show_error:
             r = lib_check.check_no_gui(False, ["tkinter"])
             if r:
-                import tkinter
+                tk = Tk()
+                tk.withdraw()
             else:
                 self.__err__("Could not import tkinter")
 
-    def __err__(self, msg: str, write_to_file = True):
-        "Log an internal error."
-        msg = self.__build_prefix__("fatal", "internal") + msg
-        print(msg)
-        if write_to_file:
-            return self.__write_to_file__(msg)
 
-
-    def __build_prefix__(self, msg_title: str, alt_id = None):
-        "Builds a prefix string for log messages."
-        if alt_id is None:
-            alt_id = self.__ID__
+    def __build_prefix__(self, msg_title: str, overwrite_id = None):
+        "Builds a prefix string for log messages, overwriting the log ID is optional."
+        if overwrite_id is None:
+            overwrite_id = self.__ID__
         layout = ""
-        if self.inc_date:
+        if self.__inc_date__:
             layout = layout + "[ %D ]"
-        if self.inc_time:
+        if self.__inc_time__:
             layout = layout + "[ %H:%M:%S ]"
-        return "[ " + alt_id.upper() + " ]" + datetime.now().strftime(layout) + "[ " + msg_title.upper() + " ] "
+        return datetime.now().strftime(layout) + "[ " + overwrite_id.upper() + " ]" + "[ " + msg_title.upper() + " ] "
 
 
-    def __write_to_file__(self, msg: str):
-        "Write a message to the log file."
-        if self.file_name == None:
+    def __verify_file__(self):
+        "Checks for the log file and creates it if necessary."
+        if not os.path.exists(self.__file_path__):
+            try: 
+                open(self.__file_path__, mode="x").close()
+            except IOError:
+                temp = self.__file_path__
+                self.__file_path__ = None
+                self.__err__("Error creating '" + temp + "', writing to file disabled.")
+                return False
+        return True
+
+
+    def __log__(self, msg: str):
+        "Write a message to the log file and cache."
+        self.__cache__.append(msg)
+        print(msg)
+
+        if self.__file_path__ == None:
             return False
 
-        if not os.path.exists(os.getcwd()):
-            try: 
-                open(self.file_name, mode="x").close()
+        if self.__verify_file__():
+            try:
+                f = open(self.__file_path__, mode="r", encoding="utf-8")
+                data = f.read()
+                f.close()
+                f = open(self.__file_path__, mode="w", encoding="utf-8")
+                if len(data.split("\n")) == 0:
+                    f.write(msg)
+                else:
+                    f.write(data + "\n" + msg)
+                f.close()
             except IOError:
-                self.__err__("Error trying to create '" + self.file_name + "'", False)
+                temp = self.__file_path__
+                self.__file_path__ = None
+                self.__err__("Error editing '" + temp + "', writing to file disabled.")
                 return False
-        try:
-            f = open(self.file_name, mode="r", encoding="utf-8")
-            file_data = f.read()
-            f.close()
-            f = open(self.file_name, mode="w", encoding="utf-8")
-            f.write(file_data + "\n" + msg)
-            f.close()
-        except IOError:
-            self.__err__("Error trying to edit '" + self.file_name + "'", False)
+        else:
             return False
         return True
 
+
+    def get_path(self):
+        "Returns path of the log file, including the filename."
+        return self.__file_path__
+
+
+    def get_last_log(self):
+        "Returns the last log message as a string."
+        return self.__cache__[len(self.__cache__) - 1]
+
+
+    def __err__(self, msg: str):
+        "Log an internal error."
+        return self.__log__(self.__build_prefix__("fatal", "internal") + msg)
     
     def info(self, msg: str):
         "Log a general message."
-        msg = self.__build_prefix__("info") + msg
-        print(msg)
-        return self.__write_to_file__(msg)
+        return self.__log__(self.__build_prefix__("info") + msg)
 
     def warn(self, msg: str):
         "Log a warning message."
-        msg = self.__build_prefix__("warn") + msg
-        print(msg)
-        return self.__write_to_file__(msg)
+        if self.__show_warning__:
+            messagebox.showwarning("Warning - " + self.__ID__[0].upper() + self.__ID__[1:len(self.__ID__)].lower(), "WARNING\n\n" + msg)
+        return self.__log__(self.__build_prefix__("warn") + msg)
 
     def error(self, msg: str):
         "Log an error message."
-        msg = self.__build_prefix__("error") + msg
-        print(msg)
-        return self.__write_to_file__(msg)
+        if self.__show_error__:
+            messagebox.showerror("Error - " + self.__ID__[0].upper() + self.__ID__[1:len(self.__ID__)].lower(), "ERROR\n\n" + msg)
+        return self.__log__(self.__build_prefix__("error") + msg)
 
     def fatal(self, msg: str):
         "Log a fatal message."
-        msg = self.__build_prefix__("fatal") + msg
-        print(msg)
-        return self.__write_to_file__(msg)
+        if self.__gui_enabled__:
+            messagebox.showerror("Fatal - " + self.__ID__[0].upper() + self.__ID__[1:len(self.__ID__)].lower(), "FATAL\n\n" + msg)
+        return self.__log__(self.__build_prefix__("fatal") + msg)
