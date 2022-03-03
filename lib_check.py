@@ -27,7 +27,12 @@ def check(lib_list: list, enable_gui = True, force_changes = False):
             error_pip = "\n'Pip' the free python package manager is also not installed, and is required to install these packages."
 
         if enable_gui:
-            from tkinter import messagebox, Tk
+            try:
+                from tkinter import messagebox, Tk
+            except ImportError:
+                enable_gui = False
+
+        if enable_gui:
             Tk().withdraw()
             query = messagebox.askyesno("Missing package(s)", "The following packages are missing: " + error_msg + error_pip + "\nWould you like to install them automatically?")
             if not query:

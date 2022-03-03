@@ -1,7 +1,15 @@
 import pygame
 from typing import Callable, Union
 from random import randint
-from .logger import Log
+
+try:
+    from .logger import Log
+except ImportError:
+    try:
+        from logger import Log
+    except ImportError:
+        print("FATAL: Can't find 'logger.py' dependency.")
+        exit()
 
 log = Log("screen.py")
 

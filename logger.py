@@ -1,6 +1,14 @@
 import os
 from datetime import datetime
-from . import lib_check
+
+try:
+    from . import lib_check
+except ImportError:
+    try:
+        import lib_check
+    except ImportError:
+        print("FATAL: Can't find 'logger.py' dependency.")
+        exit()
 
 __lib_found__ = lib_check.check_no_gui(False, ["tkinter"])
 if __lib_found__:
